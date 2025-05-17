@@ -1,4 +1,4 @@
 node_modules
-credential.json
+credentials.json
 dist
 package-lock
