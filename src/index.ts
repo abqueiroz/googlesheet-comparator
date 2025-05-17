@@ -1,4 +1,4 @@
-import { compareColumnWithArray } from "./utils/readGoogleSheet";
+import { SpreadsheetComparator } from "./utils/readGoogleSheet";
 
 async function main() {
   const spreadsheetId = "1Z49bTwCdS6a_QG5gquooUIbUf4_8rbJNBBfd36hZI90"; // Substitua pela ID da sua planilha
@@ -6,11 +6,11 @@ async function main() {
   const expectedValues = ["Alice", "Andrew", "Peter"]; // Array com os valores esperados (ordem diferente do exemplo anterior)
   const sheetNameOrIndex: string | number = "Sheet1"; // Ou o índice da aba (ex: 0 para a primeira aba)
 
-  const result = await compareColumnWithArray(
-    spreadsheetId,
+  const comparator = new SpreadsheetComparator(spreadsheetId);
+  const result = await comparator.compareColumnWithArray(
     columnHeader,
     expectedValues,
-    sheetNameOrIndex,
+    sheetNameOrIndex
   );
 
   if (result) {

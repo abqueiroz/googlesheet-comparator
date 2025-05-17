@@ -2,75 +2,84 @@ import {
   GoogleSpreadsheet,
   GoogleSpreadsheetWorksheet,
 } from "google-spreadsheet";
-import { google } from "googleapis";
+import { auth } from "../auth/googleAuth";
 
-interface ComparisonOptions {
-  compareOrder?: boolean; // Indica se a ordem dos valores deve ser levada em consideração
-}
+export class SpreadsheetComparator {
+  private doc: GoogleSpreadsheet;
+  private sheet: GoogleSpreadsheetWorksheet | null = null;
 
-const auth = new google.auth.GoogleAuth({
-  keyFile: "credentials.json",
-  scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
-});
+  constructor(private spreadsheetId: string) {
+    this.doc = new GoogleSpreadsheet(spreadsheetId, auth);
+  }
 
-export async function compareColumnWithArray(
-  spreadsheetId: string,
-  columnHeader: string,
-  expectedValues: any[],
-  sheetNameOrIndex: string | number = 0, // Permite especificar aba por nome ou índice (default: 0)
-): Promise<null | Record<string, string[]>> {
-  try {
-    //const client = await auth.getClient();
+  public async compareColumnWithArray(
+    columnHeader: string,
+    expectedValues: any[],
+    sheetNameOrIndex: string | number = 0
+  ): Promise<null | Record<string, string[]>> {
+    try {
+      await this.loadSpreadsheetInfo();
+      const sheetLoaded = await this.loadSheet(sheetNameOrIndex);
+      if (!sheetLoaded) return null;
 
-    // Inicializa o documento do Google Sheets com o ID
-    const doc = new GoogleSpreadsheet(spreadsheetId, auth);
+      const columnValues = await this.extractColumnValues(columnHeader);
+      if (!columnValues) return null;
 
-    // Carrega as informações da planilha
-    await doc.loadInfo();
+      const comparisonResult = this.compareValues(columnValues, expectedValues);
+      return comparisonResult;
+    } catch (error: any) {
+      console.error("Ocorreu um erro:", error.message);
+      return null;
+    }
+  }
 
-    let sheet: GoogleSpreadsheetWorksheet;
+  private async loadSpreadsheetInfo() {
+    await this.doc.loadInfo();
+  }
+
+  private async loadSheet(sheetNameOrIndex: string | number): Promise<boolean> {
     if (typeof sheetNameOrIndex === "number") {
       if (
         sheetNameOrIndex >= 0 &&
-        sheetNameOrIndex < doc.sheetsByIndex.length
+        sheetNameOrIndex < this.doc.sheetsByIndex.length
       ) {
-        console.log(`Índice de aba "${sheetNameOrIndex}" inválido.`);
-
-        sheet = doc.sheetsByIndex[sheetNameOrIndex];
+        this.sheet = this.doc.sheetsByIndex[sheetNameOrIndex];
       } else {
         console.error(`Índice de aba "${sheetNameOrIndex}" inválido.`);
-        return null;
+        return false;
       }
     } else if (typeof sheetNameOrIndex === "string") {
-      const foundSheet = doc.sheetsByTitle[sheetNameOrIndex];
+      const foundSheet = this.doc.sheetsByTitle[sheetNameOrIndex];
       if (foundSheet) {
-        sheet = foundSheet;
+        this.sheet = foundSheet;
       } else {
         console.error(`Aba com o nome "${sheetNameOrIndex}" não encontrada.`);
-        return null;
+        return false;
       }
     } else {
-      console.log(`Fallback para a primeira aba`);
-      sheet = doc.sheetsByIndex[0]; // Fallback para a primeira aba
+      console.log("Fallback para a primeira aba.");
+      this.sheet = this.doc.sheetsByIndex[0];
     }
-    await sheet._ensureHeaderRowLoaded();
 
-    const headers = sheet.headerValues;
+    await this.sheet._ensureHeaderRowLoaded();
+    return true;
+  }
 
-    // Encontra o índice da coluna com o header especificado
+  private async extractColumnValues(columnHeader: string): Promise<any[] | null> {
+    if (!this.sheet) return null;
+
+    const headers = this.sheet.headerValues;
     const columnIndex = headers.indexOf(columnHeader);
 
     if (columnIndex === -1) {
       console.error(
-        `Coluna com o header "${columnHeader}" não encontrada na aba "${sheet.title}".`
+        `Coluna com o header "${columnHeader}" não encontrada na aba "${this.sheet.title}".`
       );
       return null;
     }
 
     const columnValues: any[] = [];
-    const rows = await sheet.getRows();
-
-    console.log(columnValues);
+    const rows = await this.sheet.getRows();
 
     for (const row of rows) {
       const isRowEmpty = Object.values(row).every(
@@ -83,16 +92,17 @@ export async function compareColumnWithArray(
       columnValues.push(row.get(columnHeader));
     }
 
-    const missingInExpected = columnValues.filter(
+    return columnValues;
+  }
+
+  private compareValues(sheetValues: any[], expectedValues: any[]) {
+    const missingInExpected = sheetValues.filter(
       (value) => !expectedValues.includes(value)
     );
     const missingInSheet = expectedValues.filter(
-      (value) => !columnValues.includes(value)
+      (value) => !sheetValues.includes(value)
     );
 
     return { missingInExpected, missingInSheet };
-  } catch (error: any) {
-    console.error("Ocorreu um erro:", error.message);
-    return null;
   }
 }
