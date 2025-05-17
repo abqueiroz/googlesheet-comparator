@@ -1,3 +1,4 @@
+import { PureSpreadsheetComparator } from "./utils/pureReadGoogleSheet";
 import { SpreadsheetComparator } from "./utils/readGoogleSheet";
 
 async function main() {
@@ -6,7 +7,14 @@ async function main() {
   const expectedValues = ["Alice", "Andrew", "Peter"]; // Array com os valores esperados (ordem diferente do exemplo anterior)
   const sheetNameOrIndex: string | number = "Sheet1"; // Ou o índice da aba (ex: 0 para a primeira aba)
 
-  const comparator = new SpreadsheetComparator(spreadsheetId);
+  // const comparator = new SpreadsheetComparator(spreadsheetId);
+  // const result = await comparator.compareColumnWithArray(
+  //   columnHeader,
+  //   expectedValues,
+  //   sheetNameOrIndex
+  // );
+
+  const comparator = new PureSpreadsheetComparator(spreadsheetId);
   const result = await comparator.compareColumnWithArray(
     columnHeader,
     expectedValues,
