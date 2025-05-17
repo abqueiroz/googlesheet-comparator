@@ -1,0 +1,28 @@
+{
+  "dependencies": {
+    "@types/google-spreadsheet": "^3.3.2",
+    "@types/node": "^22.15.18",
+    "google-spreadsheet": "^4.1.4",
+    "typescript": "^5.8.3"
+  },
+  "name": "googlesheet-comparator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abqueiroz/googlesheet-comparator.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/abqueiroz/googlesheet-comparator/issues"
+  },
+  "homepage": "https://github.com/abqueiroz/googlesheet-comparator#readme"
+}
